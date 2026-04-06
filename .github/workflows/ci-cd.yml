@@ -50,13 +50,11 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: college-comparison-app/package-lock.json
     
     - name: Install dependencies
       run: |
         cd college-comparison-app
-        npm ci
+        npm install
     
     - name: Build frontend
       run: |
@@ -126,4 +124,3 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./college-comparison-app/dist
-        cname: smart-college-finder.dev
