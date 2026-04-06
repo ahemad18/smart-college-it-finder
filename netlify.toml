@@ -1,0 +1,24 @@
+# Netlify configuration for deploying the React frontend
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+  base = "college-comparison-app"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables
+[build.environment]
+  NODE_ENV = "production"
+  VITE_API_URL = "https://api.smart-college-it-finder.dev"
+
+[context.production]
+  command = "npm run build"
+  publish = "dist"
+
+[context.deploy-preview]
+  command = "npm run build"
+  publish = "dist"

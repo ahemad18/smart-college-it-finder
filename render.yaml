@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: smart-college-it-finder-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port 8000
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smart-college-db
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+    preDeployCommand: echo "Preparing backend for deployment"
+    routes:
+      - path: /api
+        destination: /
+
+databases:
+  - name: smart-college-db
+    plan: free
