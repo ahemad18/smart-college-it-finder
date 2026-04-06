@@ -1,0 +1,6 @@
+# Proxy all API calls to the Railway backend.
+# Netlify rewrites these transparently (200 = proxy, not redirect).
+/api/*  https://RAILWAY_BACKEND_URL/api/:splat  200
+
+# SPA fallback
+/*  /index.html  200

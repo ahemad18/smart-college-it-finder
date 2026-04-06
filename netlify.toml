@@ -1,0 +1,21 @@
+[build]
+  publish = "ai-system-web/frontend"
+  # No build command needed – plain HTML/CSS/JS static site
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Proxy all /api/* calls to the deployed Railway backend.
+# After deploying the backend to Railway, replace RAILWAY_BACKEND_URL
+# with your actual Railway URL (e.g. https://your-app.up.railway.app)
+[[redirects]]
+  from   = "/api/*"
+  to     = "https://RAILWAY_BACKEND_URL/api/:splat"
+  status = 200
+  force  = true
+
+# SPA fallback – serve index.html for any unmatched route
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
