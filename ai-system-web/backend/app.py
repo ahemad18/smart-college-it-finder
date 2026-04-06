@@ -24,7 +24,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 DATA_PATH = os.path.join(
     PROJECT_ROOT, "ontario_college_IT_programs_ONLY_DEDUP_COLLEGE_PROGRAM.csv"
 )
-FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "college-comparison-app", "dist"))
 
 IT_KEYWORDS = {
     "computer",

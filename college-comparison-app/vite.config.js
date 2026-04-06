@@ -4,6 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/AI-Powered-Comparison-of-IT-Programs-Across-Ontario-Colleges/',
+  base: '/',
   plugins: [react(), tailwindcss()],
 })
