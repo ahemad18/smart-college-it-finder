@@ -143,11 +143,6 @@ The GitHub Actions workflow (`/.github/workflows/ci-cd.yml`) includes:
 
 This project is licensed under the MIT License - see LICENSE file for details.
 
-## 👥 Project Team
-
-Group 3 - Capstone Project
-- Multiple Contributors
-
 ## 📞 Support
 
 For issues, questions, or suggestions, please open an [Issue](https://github.com/ahemad18/smart-college-it-finder/issues).
