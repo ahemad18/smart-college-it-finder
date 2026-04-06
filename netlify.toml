@@ -6,10 +6,7 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA fallback – serve index.html for any unmatched route (HashRouter handles routing)
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
-  status = 200
-
   status = 200
