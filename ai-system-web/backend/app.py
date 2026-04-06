@@ -4,6 +4,7 @@ import csv
 import logging
 import os
 import re
+import sys
 from collections import Counter, defaultdict
 from typing import Dict, List, Optional
 
@@ -11,6 +12,11 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+
+# Ensure the backend directory is on sys.path so ml_pipeline can be found
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
 
 # ML pipeline (Phase 2) – imported here so it shares the process with the API
 try:
