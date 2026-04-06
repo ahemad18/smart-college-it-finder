@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ontario IT Program Recommendation Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=4" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-content">
+        <div>
+          <p class="eyebrow">AI-Powered Comparison of IT Programs</p>
+          <h1>Ontario IT Program Recommendation Platform</h1>
+          <p>
+            Discover the best-fit IT programs across Ontario colleges using AI-driven
+            recommendations, skill clustering, benchmarking, and data exploration.
+          </p>
+          <div class="hero-actions">
+            <button class="primary" data-target="recommendations">Get Recommendations</button>
+          </div>
+        </div>
+        <div class="hero-card">
+          <h3>Live Dataset</h3>
+          <p id="dataset-meta">Loading dataset stats...</p>
+          <div class="stats-grid">
+            <div>
+              <span id="program-count">-</span>
+              <small>IT Programs</small>
+            </div>
+            <div>
+              <span id="college-count">-</span>
+              <small>Colleges</small>
+            </div>
+            <div>
+              <span id="cluster-count">-</span>
+              <small>Skill Clusters</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="pill-nav">
+      <button data-target="recommendations" class="active">Student Recommendations</button>
+      <button data-target="advisor">Advisor View</button>
+      <button data-target="benchmark">College Benchmarking</button>
+      <button data-target="ml-insights">ML Insights</button>
+      <button data-target="explorer">Data Explorer</button>
+      <a href="/compare.html" class="pill-nav-link">College Comparison ↗</a>
+    </nav>
+
+    <main>
+      <section id="recommendations" class="section">
+        <div class="section-header">
+          <h2>Student Recommendations</h2>
+          <p>Enter your profile and get AI-ranked IT program matches.</p>
+        </div>
+        <form id="recommendation-form" class="card form-grid">
+          <label>
+            Education Background
+            <select name="education">
+              <option value="">Select education level</option>
+              <option value="High school">High school</option>
+              <option value="High school with math">High school with math</option>
+              <option value="Diploma">Diploma</option>
+              <option value="Advanced diploma">Advanced diploma</option>
+              <option value="Bachelor degree">Bachelor degree</option>
+              <option value="Graduate certificate">Graduate certificate</option>
+            </select>
+          </label>
+          <label>
+            Skills (choose multiple)
+            <details class="multi-select" data-field="skills">
+              <summary>Select skills</summary>
+              <div class="multi-options">
+                <label><input type="checkbox" value="python" /> Python</label>
+                <label><input type="checkbox" value="java" /> Java</label>
+                <label><input type="checkbox" value="javascript" /> JavaScript</label>
+                <label><input type="checkbox" value="networking" /> Networking</label>
+                <label><input type="checkbox" value="cybersecurity" /> Cybersecurity</label>
+                <label><input type="checkbox" value="data" /> Data</label>
+                <label><input type="checkbox" value="cloud" /> Cloud</label>
+                <label><input type="checkbox" value="devops" /> DevOps</label>
+                <label><input type="checkbox" value="database" /> Database</label>
+                <label><input type="checkbox" value="web" /> Web development</label>
+              </div>
+            </details>
+          </label>
+          <label>
+            Career Goals (choose multiple)
+            <details class="multi-select" data-field="goals">
+              <summary>Select career goals</summary>
+              <div class="multi-options">
+                <label><input type="checkbox" value="software development" /> Software development</label>
+                <label><input type="checkbox" value="data analytics" /> Data analytics</label>
+                <label><input type="checkbox" value="ai" /> AI / ML</label>
+                <label><input type="checkbox" value="cybersecurity" /> Cybersecurity</label>
+                <label><input type="checkbox" value="cloud" /> Cloud engineering</label>
+                <label><input type="checkbox" value="it support" /> IT support</label>
+                <label><input type="checkbox" value="networking" /> Networking</label>
+              </div>
+            </details>
+          </label>
+          <label>
+            Delivery Preference
+            <select name="delivery">
+              <option value="">Any</option>
+              <option value="Full Time">Full Time</option>
+              <option value="Part Time">Part Time</option>
+              <option value="Online">Online</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+          </label>
+          <label>
+            Region Preference
+            <select name="region">
+              <option value="">Any</option>
+              <option value="GTA">GTA</option>
+              <option value="Eastern">Eastern</option>
+              <option value="Central">Central</option>
+              <option value="Northern">Northern</option>
+              <option value="Southwestern">Southwestern</option>
+            </select>
+          </label>
+          <label>
+            Max Duration (years)
+            <select name="duration">
+              <option value="">Any</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+          <button type="submit" class="primary">Generate Recommendations</button>
+        </form>
+        <div id="recommendation-results" class="grid"></div>
+      </section>
+
+      <section id="advisor" class="section">
+        <div class="section-header">
+          <h2>Academic Advisor View</h2>
+          <p>Skill clusters help advisors map programs to IT tracks.</p>
+        </div>
+        <div id="cluster-cards" class="grid"></div>
+      </section>
+
+      <section id="benchmark" class="section">
+        <div class="section-header">
+          <h2>College Benchmarking</h2>
+          <p>Compare a college against IT program benchmarks.</p>
+        </div>
+        <div class="card form-grid">
+          <label>
+            Select College
+            <select id="benchmark-college"></select>
+          </label>
+          <button id="benchmark-button" class="primary">Run Benchmark</button>
+        </div>
+        <div id="benchmark-results" class="card"></div>
+      </section>
+
+      <section id="ml-insights" class="section">
+        <div class="section-header">
+          <h2>ML Insights <span class="badge badge-new">Phase 2</span></h2>
+          <p>Data-driven KMeans clustering and TF-IDF cosine-similarity recommendations — replacing the rule-based engine.</p>
+        </div>
+
+        <!-- Model evaluation card -->
+        <div class="card" id="ml-eval-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+            <h3 style="margin:0;">Model Evaluation Metrics</h3>
+            <button id="run-eval-btn" class="primary" style="padding:.55rem 1.25rem;font-size:.9rem;">&#9654; Run Evaluation</button>
+          </div>
+          <div id="ml-eval-status" style="margin-top:.75rem;font-size:.875rem;color:var(--muted,#6b7280);"></div>
+          <div id="ml-eval-metrics" class="stats-grid" style="margin-top:1rem;">
+            <div><span id="ml-silhouette">—</span><small>Silhouette Score</small></div>
+            <div><span id="ml-corpus">—</span><small>Programs in Corpus</small></div>
+            <div><span id="ml-clusters-n">—</span><small>KMeans Clusters</small></div>
+            <div><span id="ml-vocab">—</span><small>TF-IDF Vocabulary</small></div>
+          </div>
+          <div id="ml-extra-metrics" style="display:none;margin-top:1rem;padding:1rem;background:var(--surface2,#f8fafc);border-radius:.5rem;">
+            <div style="display:flex;gap:2rem;flex-wrap:wrap;font-size:.9rem;">
+              <span>Inertia: <strong id="ml-inertia">—</strong></span>
+              <span>Cluster Sizes: <strong id="ml-cluster-sizes">—</strong></span>
+            </div>
+          </div>
+          <div style="margin-top:1rem;">
+            <strong>Top TF-IDF Terms Across Corpus</strong>
+            <div id="ml-top-terms" class="tag-cloud" style="margin-top:.5rem;"></div>
+          </div>
+        </div>
+
+        <!-- ML Cluster cards -->
+        <div class="section-header" style="margin-top:2rem;">
+          <h3>KMeans Program Clusters</h3>
+          <p>Clusters emerge from TF-IDF program description vectors — no hand-coded keywords.</p>
+        </div>
+        <div id="ml-cluster-cards" class="grid"></div>
+
+        <!-- ML Recommendation demo -->
+        <div class="section-header" style="margin-top:2rem;">
+          <h3>ML-Powered Recommendations</h3>
+          <p>Cosine similarity between your profile and program TF-IDF vectors.</p>
+        </div>
+        <form id="ml-rec-form" class="card form-grid">
+          <label>
+            Skills &amp; Interests (free text)
+            <input type="text" id="ml-skills-input" placeholder="e.g. python machine learning data science" />
+          </label>
+          <label>
+            Career Goals (free text)
+            <input type="text" id="ml-goals-input" placeholder="e.g. AI developer data analyst" />
+          </label>
+          <label>
+            Education Level
+            <select id="ml-edu-input">
+              <option value="">Any</option>
+              <option value="High school">High school</option>
+              <option value="Diploma">Diploma</option>
+              <option value="Bachelor degree">Bachelor degree</option>
+            </select>
+          </label>
+          <label>
+            Number of Results
+            <select id="ml-limit-input">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+            </select>
+          </label>
+          <button type="submit" class="primary">Run ML Recommendations</button>
+        </form>
+        <div id="ml-rec-results" class="grid"></div>
+      </section>
+
+
+      <section id="explorer" class="section">
+        <div class="section-header">
+          <h2>Data Explorer</h2>
+          <p>Filter Ontario IT programs using the live dataset.</p>
+        </div>
+        <div class="card form-grid">
+          <label>
+            Course / Skill Focus (choose multiple)
+            <details class="multi-select" data-field="focus">
+              <summary>Select focus areas</summary>
+              <div class="multi-options">
+                <label><input type="checkbox" value="cybersecurity" /> Cybersecurity</label>
+                <label><input type="checkbox" value="data" /> Data</label>
+                <label><input type="checkbox" value="cloud" /> Cloud</label>
+                <label><input type="checkbox" value="software" /> Software</label>
+                <label><input type="checkbox" value="network" /> Networking</label>
+                <label><input type="checkbox" value="web" /> Web</label>
+                <label><input type="checkbox" value="ai" /> AI</label>
+              </div>
+            </details>
+          </label>
+          <label>
+            College
+            <select id="filter-college"></select>
+          </label>
+          <label>
+            Delivery
+            <select id="filter-delivery">
+              <option value="">Any</option>
+              <option value="Full Time">Full Time</option>
+              <option value="Part Time">Part Time</option>
+              <option value="Online">Online</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+          </label>
+          <button id="search-button" class="primary">Search Programs</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>College</th>
+                <th>Program</th>
+                <th>Credential</th>
+                <th>Delivery</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody id="program-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Built for Capstone Project — AI-Powered Comparison of IT Programs Across Ontario Colleges. Phase 2: ML Pipeline (KMeans + TF-IDF).</p>
+    </footer>
+
+    <section class="chatbot" aria-label="Olivia AI assistant">
+      <button class="chatbot-toggle" id="chatbot-toggle" aria-expanded="false">
+        <span>Olivia</span>
+        <small>AI Help</small>
+      </button>
+      <div class="chatbot-panel" id="chatbot-panel" aria-hidden="true">
+        <div class="chatbot-header">
+          <div class="chatbot-brand">
+            <img src="olevia-avatar.svg" alt="Olivia avatar" />
+            <div>
+              <h3>Olivia</h3>
+              <p>Your AI guide for Ontario IT program comparison.</p>
+            </div>
+          </div>
+          <div class="chatbot-actions">
+            <button id="chatbot-reset" class="chatbot-reset" type="button">Reset</button>
+            <button id="chatbot-close" aria-label="Close chat">×</button>
+          </div>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+          <div class="message bot">
+            Hi! I’m Olivia. Ask me about recommendations, skill clusters, benchmarking, or data explorer.
+          </div>
+        </div>
+        <div class="chatbot-input">
+          <input id="chatbot-input" type="text" placeholder="Ask Olivia..." />
+          <div class="chatbot-tools">
+            <button id="chatbot-emoji" class="chatbot-tool" type="button" aria-label="Insert emoji">😊</button>
+            <button id="chatbot-mic" class="chatbot-tool" type="button" aria-label="Voice input">🎤</button>
+          </div>
+          <button id="chatbot-send" class="primary">Send</button>
+        </div>
+        <div class="emoji-panel" id="emoji-panel" aria-hidden="true">
+          <button type="button">😀</button>
+          <button type="button">😊</button>
+          <button type="button">😄</button>
+          <button type="button">🤔</button>
+          <button type="button">🎯</button>
+          <button type="button">📚</button>
+          <button type="button">💻</button>
+          <button type="button">🔍</button>
+          <button type="button">✅</button>
+          <button type="button">⭐</button>
+        </div>
+      </div>
+    </section>
+
+
+
+    <script src="app.js?v=4"></script>
+  </body>
+</html>
