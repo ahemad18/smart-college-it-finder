@@ -4,7 +4,6 @@ import csv
 import logging
 import os
 import re
-import sys
 from collections import Counter, defaultdict
 from typing import Dict, List, Optional
 
@@ -12,19 +11,6 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-
-# Ensure the backend directory is on sys.path so ml_pipeline can be found
-_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-if _BACKEND_DIR not in sys.path:
-    sys.path.insert(0, _BACKEND_DIR)
-
-# ML pipeline (Phase 2) – imported here so it shares the process with the API
-try:
-    from ml_pipeline import pipeline as _ml_pipeline
-    ML_AVAILABLE = True
-except ImportError:
-    _ml_pipeline = None  # type: ignore[assignment]
-    ML_AVAILABLE = False
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA_PATH = os.path.join(
@@ -130,8 +116,6 @@ except Exception as exc:  # pragma: no cover - startup guard
     PROGRAMS = []
     LOAD_ERROR = str(exc)
 
-ML_FIT_ERROR: Optional[str] = None
-
 app = FastAPI(title="Ontario IT Program Recommendation API", version="2.0.0")
 
 app.add_middleware(
@@ -156,22 +140,6 @@ def is_it_program(row: Dict[str, str]) -> bool:  # Detect IT-related programs vi
     )
     tokens = set(tokenize(combined))
     return any(keyword in tokens for keyword in IT_KEYWORDS)
-
-
-@app.on_event("startup")
-def fit_ml_pipeline() -> None:  # Fit ML pipeline after all functions are defined.
-    # Runs once at server start using the proper is_it_program filter.
-    # Logs outcome so startup errors are visible in server logs.
-    global ML_FIT_ERROR
-    if not ML_AVAILABLE or not PROGRAMS or LOAD_ERROR:
-        return
-    try:
-        it_programs = [row for row in PROGRAMS if is_it_program(row)]
-        _ml_pipeline.fit(it_programs)
-        logger.info("ML pipeline ready: %d IT programs fitted.", len(it_programs))
-    except Exception as exc:
-        logger.exception("ML pipeline fit failed")
-        ML_FIT_ERROR = str(exc)
 
 
 def program_score(row: Dict[str, str], profile: RecommendationRequest) -> float:  # Score program fit for a profile.
@@ -235,8 +203,6 @@ def health_check() -> Dict[str, str]:  # Report API status and dataset load stat
         "status": "ok" if not LOAD_ERROR else "error",
         "records": str(len(PROGRAMS)),
         "dataset_loaded": "false" if LOAD_ERROR else "true",
-        "ml_pipeline": "fitted" if (ML_AVAILABLE and _ml_pipeline.is_fitted) else "unavailable",
-        "ml_programs_in_corpus": str(_ml_pipeline.programs.__len__()) if (ML_AVAILABLE and _ml_pipeline.is_fitted) else "0",
     }
 
 
@@ -624,101 +590,6 @@ def policy_overview() -> Dict[str, object]:  # Aggregate IT program supply by re
     except Exception as exc:
         logger.exception("Failed to build policy overview")
         raise HTTPException(status_code=500, detail="Unable to load policy overview") from exc
-
-
-# ---------------------------------------------------------------------------
-# Phase 2 – ML endpoints
-# ---------------------------------------------------------------------------
-
-@app.post("/api/ml-recommendations")
-def ml_recommend_programs(request: RecommendationRequest) -> Dict[str, object]:  # ML cosine-similarity recommendations.
-    # Combines profile fields into a query document.
-    # Falls back to rule-based if ML pipeline is not fitted.
-    try:
-        ensure_dataset_loaded()
-        if not ML_AVAILABLE or not _ml_pipeline.is_fitted:
-            # Transparent fallback to rule-based engine
-            return {"source": "rule-based (ML not available)", **recommend_programs(request)}
-
-        profile_parts = list(request.skills) + list(request.goals) + [request.education]
-        if request.region_preference:
-            profile_parts.append(request.region_preference)
-        profile_text = " ".join(p for p in profile_parts if p)
-
-        results = _ml_pipeline.recommend(
-            profile_text=profile_text,
-            programs=_ml_pipeline.programs,  # IT-only, as fitted
-            top_n=request.limit,
-        )
-
-        # Apply delivery / region / duration post-filters (optional preferences)
-        filtered = []
-        for row in results:
-            if request.delivery_preference:
-                delivery = row.get("delivery_format", "")
-                if delivery and normalize_text(request.delivery_preference) not in normalize_text(delivery):
-                    continue
-            if request.max_duration_years:
-                try:
-                    dur = float(row.get("duration_years") or 0)
-                    if dur and dur > request.max_duration_years:
-                        continue
-                except ValueError:
-                    pass
-            filtered.append(row)
-
-        # If filters removed too many, top up with unfiltered results
-        top = filtered if len(filtered) >= min(3, request.limit) else results
-        top = top[:request.limit]
-
-        return {
-            "source": "ml-cosine-similarity",
-            "count": len(top),
-            "recommendations": top,
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("Failed to generate ML recommendations")
-        raise HTTPException(status_code=500, detail="Unable to generate ML recommendations") from exc
-
-
-@app.get("/api/ml-clusters")
-def ml_skill_clusters() -> Dict[str, object]:  # Data-driven KMeans program clusters.
-    # Returns cluster names, top TF-IDF terms, sizes, and samples.
-    # Falls back to rule-based clusters if pipeline not fitted.
-    try:
-        ensure_dataset_loaded()
-        if not ML_AVAILABLE or not _ml_pipeline.is_fitted:
-            return {"source": "rule-based", "clusters": skill_clusters()["clusters"]}
-
-        summary = _ml_pipeline.cluster_summary(_ml_pipeline.programs)
-        return {
-            "source": "kmeans-tfidf",
-            "n_clusters": _ml_pipeline.kmeans.n_clusters,
-            "clusters": summary,
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("Failed to build ML clusters")
-        raise HTTPException(status_code=500, detail="Unable to load ML clusters") from exc
-
-
-@app.get("/api/ml-evaluation")
-def ml_evaluation() -> Dict[str, object]:  # Model evaluation metrics for Phase 2.
-    # Reports silhouette score, inertia, cluster sizes, vocabulary size.
-    # Returns not_fitted status if pipeline has not run yet.
-    try:
-        if not ML_AVAILABLE:
-            return {"status": "unavailable", "reason": "scikit-learn not installed"}
-        if ML_FIT_ERROR:
-            return {"status": "error", "reason": ML_FIT_ERROR}
-        report = _ml_pipeline.evaluation_report()
-        return report
-    except Exception as exc:
-        logger.exception("Failed to retrieve ML evaluation")
-        raise HTTPException(status_code=500, detail="Unable to retrieve ML evaluation") from exc
 
 
 if os.path.isdir(FRONTEND_DIR):
